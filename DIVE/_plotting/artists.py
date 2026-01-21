@@ -8,6 +8,41 @@ import vispy.io as vpio
 import vispy.scene as vpscene
 import vispy.visuals as vpvisuals
 
+def _get_valid_marker_symbols():
+    """Get valid marker symbols from vispy, handling different API versions."""
+    try:
+        # Try newer API: Markers._symbol_shader_values.keys()
+        from vispy.scene.visuals import Markers
+        if hasattr(Markers, '_symbol_shader_values'):
+            return set(Markers._symbol_shader_values.keys())
+    except (ImportError, AttributeError):
+        pass
+    try:
+        # Try alternative: Markers.symbols
+        from vispy.scene.visuals import Markers
+        if hasattr(Markers, 'symbols'):
+            symbols = Markers.symbols
+            if isinstance(symbols, (list, tuple, set)):
+                return set(symbols)
+            elif hasattr(symbols, 'keys'):
+                return set(symbols.keys())
+    except (ImportError, AttributeError):
+        pass
+    try:
+        # Try old API: MarkersVisual._marker_funcs
+        if hasattr(vpvisuals.MarkersVisual, '_marker_funcs'):
+            marker_funcs = vpvisuals.MarkersVisual._marker_funcs
+            if isinstance(marker_funcs, dict):
+                return set(marker_funcs.keys())
+            elif isinstance(marker_funcs, (list, tuple, set)):
+                return set(marker_funcs)
+            else:
+                return set(marker_funcs)
+    except AttributeError:
+        pass
+    # Fallback to common marker symbols
+    return {'o', 's', '^', 'v', '<', '>', 'd', 'p', 'h', '*', '+', 'x', '|', '_'}
+
 class Artist:
     def __init__(self):
         self.selectable = False
@@ -1420,8 +1455,9 @@ class ScatterArtist(Artist):
             attrs['marker'] = state['marker']
             if not isinstance(attrs['marker'], str):
                 return 'marker must be of type: str'
-            elif attrs['marker'] not in vpvisuals.MarkersVisual._marker_funcs:
-                return 'marker must be one of the following: {}'.format(str(sorted(vpvisuals.MarkersVisual._marker_funcs))[1:-1])
+            valid_markers = _get_valid_marker_symbols()
+            if attrs['marker'] not in valid_markers:
+                return 'marker must be one of the following: {}'.format(str(sorted(valid_markers))[1:-1])
         for attr in ['label_size', 'draw_order', 'label_draw_order', 'line_width', 'marker_size', 'edge_width']:
             if attr in state:
                 attrs[attr] = state[attr]

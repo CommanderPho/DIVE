@@ -1,4 +1,5 @@
 from . import custom_qt
+from .._plotting.artists import _get_valid_marker_symbols
 import importlib
 import vispy.app as vpapp
 import vispy.io as vpio
@@ -685,7 +686,7 @@ class ScatterWidget(qtwidgets.QWidget):
         marker_group.setLayout(qtwidgets.QFormLayout())
         self.layout().addRow(marker_group)
         self.marker = qtwidgets.QComboBox()
-        self.marker.addItems(sorted(vpvisuals.MarkersVisual._marker_funcs))
+        self.marker.addItems(sorted(_get_valid_marker_symbols()))
         self.marker.setCurrentText(artist['marker'])
         marker_group.layout().addRow('Marker:', self.marker)
         self.marker_size = add_spinbox(marker_group.layout(), 'Size:', 0.0, float('inf'), artist['marker_size'])
